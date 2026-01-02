@@ -1,5 +1,6 @@
 from rest_framework import serializers
 from .models import Item, Conversion, Tag, Application
+from apps.catalog.utils import normalize_description
 
 
 class ItemSerializer(serializers.ModelSerializer):
@@ -36,6 +37,7 @@ class ItemSerializer(serializers.ModelSerializer):
             'applications_input',
         ]
 
+
     def get_conversions(self, obj):
         return list(obj.conversions.values_list('name', flat=True))
 
@@ -45,38 +47,80 @@ class ItemSerializer(serializers.ModelSerializer):
     def get_applications(self, obj):
         return list(obj.applications.values_list('name', flat=True))
 
+
+    def create(self, validated_data):
+        conversions_data = validated_data.pop('conversions_input', None)
+        tags_data = validated_data.pop('tags_input', None)
+        applications_data = validated_data.pop('applications_input', None)
+
+        validated_data['description'] = normalize_description(
+            validated_data.get('description')
+        )
+
+        instance = super().create(validated_data)
+
+        if conversions_data:
+            objs = [
+                Conversion.objects.get_or_create(name=v.strip())[0]
+                for v in conversions_data
+            ]
+            instance.conversions.add(*objs)
+
+        if tags_data:
+            objs = [
+                Tag.objects.get_or_create(name=v.strip())[0]
+                for v in tags_data
+            ]
+            instance.tags.set(objs)
+
+        if applications_data:
+            objs = [
+                Application.objects.get_or_create(name=v.strip())[0]
+                for v in applications_data
+            ]
+            instance.applications.set(objs)
+
+        return instance
+
     def update(self, instance, validated_data):
         conversions_data = validated_data.pop('conversions_input', None)
         tags_data = validated_data.pop('tags_input', None)
         applications_data = validated_data.pop('applications_input', None)
 
+        if 'description' in validated_data:
+            validated_data['description'] = normalize_description(
+                validated_data['description']
+            )
+
         instance = super().update(instance, validated_data)
 
         if conversions_data is not None:
-            objs = []
-            for value in conversions_data:
-                obj, _ = Conversion.objects.get_or_create(
-                    name=value.strip()
-                )
-                objs.append(obj)
+            objs = [
+                Conversion.objects.get_or_create(name=v.strip())[0]
+                for v in conversions_data
+            ]
+            
+
+            if instance.description:
+                first_token = instance.description.split(" ", 1)[0]
+                auto_conv, _ = Conversion.objects.get_or_create(name=first_token)
+                if auto_conv not in objs:
+                    objs.append(auto_conv)
+            
             instance.conversions.set(objs)
 
         if tags_data is not None:
-            objs = []
-            for value in tags_data:
-                obj, _ = Tag.objects.get_or_create(
-                    name=value.strip()
-                )
-                objs.append(obj)
+            objs = [
+                Tag.objects.get_or_create(name=v.strip())[0]
+                for v in tags_data
+            ]
             instance.tags.set(objs)
 
         if applications_data is not None:
-            objs = []
-            for value in applications_data:
-                obj, _ = Application.objects.get_or_create(
-                    name=value.strip()
-                )
-                objs.append(obj)
+            objs = [
+                Application.objects.get_or_create(name=v.strip())[0]
+                for v in applications_data
+            ]
             instance.applications.set(objs)
 
         return instance

@@ -12,11 +12,13 @@ import CloseIcon from '@mui/icons-material/Close'
 interface ItemDetailsHeaderProps {
   onClose: () => void
   onSave: () => void
+  showSave?: boolean
 }
 
 const ItemDetailsHeader = ({
   onClose,
   onSave,
+  showSave = true,
 }: ItemDetailsHeaderProps) => {
   return (
     <AppBar sx={{ position: 'relative' }}>
@@ -42,9 +44,11 @@ const ItemDetailsHeader = ({
 
         <Box sx={{ flexGrow: 1 }} />
 
-        <Button color="inherit" onClick={onSave}>
-          Salvar
-        </Button>
+        {showSave && (
+          <Button color="inherit" onClick={onSave}>
+            Salvar
+          </Button>
+        )}
       </Toolbar>
     </AppBar>
   )

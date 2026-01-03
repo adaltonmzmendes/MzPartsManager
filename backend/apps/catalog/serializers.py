@@ -1,6 +1,34 @@
 from rest_framework import serializers
-from .models import Item, Conversion, Tag, Application
+from .models import Item, Conversion, Tag, Application, GlobalItem
 from apps.catalog.utils import normalize_description
+
+
+class GlobalItemSuggestionSerializer(serializers.ModelSerializer):
+    conversions = serializers.SlugRelatedField(
+        many=True,
+        read_only=True,
+        slug_field='name'
+    )
+    tags = serializers.SlugRelatedField(
+        many=True,
+        read_only=True,
+        slug_field='name'
+    )
+    applications = serializers.SlugRelatedField(
+        many=True,
+        read_only=True,
+        slug_field='name'
+    )
+
+    class Meta:
+        model = GlobalItem
+        fields = [
+            'id',
+            'normalized_description',
+            'conversions',
+            'tags',
+            'applications',
+        ]
 
 
 class ItemSerializer(serializers.ModelSerializer):
@@ -37,7 +65,6 @@ class ItemSerializer(serializers.ModelSerializer):
             'applications_input',
         ]
 
-
     def get_conversions(self, obj):
         return list(obj.conversions.values_list('name', flat=True))
 
@@ -46,7 +73,6 @@ class ItemSerializer(serializers.ModelSerializer):
 
     def get_applications(self, obj):
         return list(obj.applications.values_list('name', flat=True))
-
 
     def create(self, validated_data):
         conversions_data = validated_data.pop('conversions_input', None)
@@ -100,7 +126,6 @@ class ItemSerializer(serializers.ModelSerializer):
                 for v in conversions_data
             ]
             
-
             if instance.description:
                 first_token = instance.description.split(" ", 1)[0]
                 auto_conv, _ = Conversion.objects.get_or_create(name=first_token)

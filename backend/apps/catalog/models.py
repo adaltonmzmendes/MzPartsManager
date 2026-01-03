@@ -76,20 +76,29 @@ def manage_item_identity_and_global_link(sender, instance, created, **kwargs):
     instance.conversions.add(conversion)
 
     with transaction.atomic():
-        global_obj, created_global = GlobalItem.objects.get_or_create(identity=first_token)
+        target_global = None
 
-        if created_global:
-            global_obj.normalized_description = instance.description
-            global_obj.save()
+        target_global = GlobalItem.objects.filter(identity=first_token).first()
 
-        if instance.global_item != global_obj:
+        if not target_global:
+            target_global = GlobalItem.objects.filter(conversions__name=first_token).first()
+
+        if not target_global:
+            target_global = GlobalItem.objects.create(
+                identity=first_token,
+                normalized_description=instance.description
+            )
+            target_global.conversions.add(conversion)
+
+        if instance.global_item != target_global:
             old_global = instance.global_item 
-            instance.global_item = global_obj
+            instance.global_item = target_global
             instance.save(update_fields=['global_item'])
 
             if old_global:
                 refresh_global_aggregations(old_global)
-            refresh_global_aggregations(global_obj)
+            
+            refresh_global_aggregations(target_global)
 
 def refresh_global_aggregations(global_item):
     if not global_item:

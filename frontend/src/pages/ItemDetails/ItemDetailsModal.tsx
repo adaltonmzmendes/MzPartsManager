@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import type { ReactElement } from 'react'
 import { Dialog, Slide } from '@mui/material'
 import type { TransitionProps } from '@mui/material/transitions'
@@ -15,6 +15,13 @@ interface Item {
   conversions?: string[]
   tags?: string[]
   applications?: string[]
+}
+
+export interface GlobalSuggestions {
+  normalized_description: string | null
+  conversions: string[]
+  tags: string[]
+  applications: string[]
 }
 
 interface ItemFormState {
@@ -47,12 +54,29 @@ const Transition = forwardRef(function Transition(
 
 
 const ItemEditor = ({ item, onClose, onSaved }: ItemEditorProps) => {
+  const [activeTab, setActiveTab] = useState(0)
+  const [globalSuggestions, setGlobalSuggestions] = useState<GlobalSuggestions | null>(null)
+  
   const [form, setForm] = useState<ItemFormState>({
     description: item.description,
     conversions: item.conversions ?? [],
     tags: item.tags ?? [],
     applications: item.applications ?? [],
   })
+
+  useEffect(() => {
+    const fetchSuggestions = async () => {
+      try {
+        const response = await api.get(`api/catalog/items/${item.id}/suggestions/`)
+        if (response.status === 200 && response.data) {
+          setGlobalSuggestions(response.data)
+        }
+      } catch (error) {
+        console.error('Erro ao buscar sugestões:', error)
+      }
+    }
+    fetchSuggestions()
+  }, [item.id])
 
   const handleChange =
     <K extends keyof ItemFormState>(field: K) =>
@@ -62,6 +86,16 @@ const ItemEditor = ({ item, onClose, onSaved }: ItemEditorProps) => {
         [field]: value,
       }))
     }
+
+  const handleAcceptSuggestion = (
+    field: keyof Omit<ItemFormState, 'description'>,
+    value: string
+  ) => {
+    const currentList = form[field]
+    if (!currentList.includes(value)) {
+      handleChange(field)([...currentList, value])
+    }
+  }
 
   const handleSave = async () => {
     try {
@@ -81,8 +115,19 @@ const ItemEditor = ({ item, onClose, onSaved }: ItemEditorProps) => {
 
   return (
     <>
-      <ItemDetailsHeader onClose={onClose} onSave={handleSave} />
-      <ItemDetailsForm form={form} onChange={handleChange} />
+      <ItemDetailsHeader 
+        onClose={onClose} 
+        onSave={handleSave} 
+        showSave={true}
+      />
+      <ItemDetailsForm 
+        form={form} 
+        globalSuggestions={globalSuggestions}
+        onChange={handleChange}
+        onAcceptSuggestion={handleAcceptSuggestion}
+        activeTab={activeTab}
+        onTabChange={setActiveTab}
+      />
     </>
   )
 }

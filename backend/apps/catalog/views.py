@@ -1,16 +1,27 @@
-from rest_framework import viewsets, permissions, status
+from rest_framework import viewsets, permissions, status, filters
 from rest_framework.decorators import action
 from rest_framework.response import Response
 from .models import Item
 from .serializers import ItemSerializer, GlobalItemSuggestionSerializer
+from .pagination import StandardResultsSetPagination  # Import da paginação criada
 
 class ItemViewSet(viewsets.ModelViewSet):
     serializer_class = ItemSerializer
     permission_classes = [permissions.IsAuthenticated]
+    
+    # 🔹 Configuração de Paginação (20 itens por vez)
+    pagination_class = StandardResultsSetPagination
+    
+    # 🔹 Configuração de Busca (?search=termo)
+    filter_backends = [filters.SearchFilter]
+    # Define quais campos o DRF vai olhar quando chegar um termo de busca
+    search_fields = ['description', 'global_item__identity']
 
     def get_queryset(self):
         user = self.request.user
-        return Item.objects.filter(company=user.company)
+        # 🔹 É essencial adicionar o .order_by() para garantir que a paginação 
+        # não envie itens duplicados ou pule itens entre as páginas.
+        return Item.objects.filter(company=user.company).order_by('-id')
 
     @action(detail=True, methods=['get'])
     def suggestions(self, request, pk=None):

@@ -25,9 +25,6 @@ import ListItemText from '@mui/material/ListItemText'
 import { Link, useLocation, useNavigate } from 'react-router-dom'
 import api from '@/services/api'
 
-/* ===========================
-   TYPES
-=========================== */
 interface NavbarProps {
   content: ReactNode
 }
@@ -42,9 +39,6 @@ interface MainProps {
 
 const drawerWidth = 240
 
-/* ===========================
-   MAIN (conteúdo)
-=========================== */
 const Main = styled('main', {
   shouldForwardProp: (prop) => prop !== 'open',
 })<MainProps>(({ theme, open }) => ({
@@ -64,9 +58,6 @@ const Main = styled('main', {
   }),
 }))
 
-/* ===========================
-   APP BAR
-=========================== */
 const AppBar = styled(MuiAppBar, {
   shouldForwardProp: (prop) => prop !== 'open',
 })<AppBarStyledProps>(({ theme, open }) => ({
@@ -84,9 +75,6 @@ const AppBar = styled(MuiAppBar, {
   }),
 }))
 
-/* ===========================
-   DRAWER HEADER
-=========================== */
 const DrawerHeader = styled('div')(({ theme }) => ({
   display: 'flex',
   alignItems: 'center',
@@ -95,9 +83,6 @@ const DrawerHeader = styled('div')(({ theme }) => ({
   ...theme.mixins.toolbar,
 }))
 
-/* ===========================
-   NAVBAR
-=========================== */
 export default function Navbar({ content }: NavbarProps) {
   const theme = useTheme()
   const location = useLocation()

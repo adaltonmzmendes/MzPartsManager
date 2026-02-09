@@ -1,146 +1,121 @@
-import { useEffect, useState } from 'react'
-import {
-  Box,
-  InputAdornment,
-  CircularProgress,
-  IconButton,
-} from '@mui/material'
-import SearchIcon from '@mui/icons-material/Search'
-import InfoOutlinedIcon from '@mui/icons-material/InfoOutlined'
+import { useState } from 'react'
+import { Box, CircularProgress, Typography } from '@mui/material'
+import { useInfiniteQuery } from '@tanstack/react-query'
 
 import api from '@/services/api'
-
-import {
-  PageWrapper,
-  Content,
-  SearchField,
-  ItemCard,
-} from './Home.styles'
-
+import { PageWrapper, Content } from './Home.styles'
 import ItemDetailsModal from '../ItemDetails/ItemDetailsModal'
 
-interface Item {
-  id: number
-  description: string
-}
+// Tipos
+import { Item, PaginatedResponse } from './types'
+
+// Componentes
+import { HomeSearch } from './components/HomeSearch'
+import { HomeItemRow } from './components/HomeItemRow'
+import { ScrollSentinel } from './components/ScrollSentinel'
 
 const Home = () => {
-  const [items, setItems] = useState<Item[]>([])
-  const [filteredItems, setFilteredItems] = useState<Item[]>([])
-  const [search, setSearch] = useState('')
-  const [loading, setLoading] = useState(true)
-
+  const [activeSearch, setActiveSearch] = useState('')
   const [selectedItem, setSelectedItem] = useState<Item | null>(null)
   const [modalOpen, setModalOpen] = useState(false)
 
-  /* 🔹 Carrega itens (reutilizável) */
-  const fetchItems = async () => {
-    setLoading(true)
-    try {
-      const res = await api.get<Item[]>('api/catalog/items/')
-      setItems(res.data)
-      setFilteredItems(res.data)
-    } finally {
-      setLoading(false)
-    }
-  }
+  // 🔹 React Query
+  const {
+    data,
+    isLoading,
+    isError,
+    fetchNextPage,
+    hasNextPage,
+    isFetchingNextPage,
+    refetch,
+  } = useInfiniteQuery<PaginatedResponse<Item>>({
+    queryKey: ['items', activeSearch],
+    initialPageParam: 1,
+    queryFn: async ({ pageParam }) => {
+      const params: any = { page: pageParam }
+      if (activeSearch) params.search = activeSearch
+      
+      const res = await api.get<PaginatedResponse<Item>>('api/catalog/items/', {
+        params,
+      })
+      return res.data
+    },
+    getNextPageParam: (lastPage) => {
+      if (lastPage.next) {
+        const url = new URL(lastPage.next)
+        const nextPage = url.searchParams.get('page')
+        return nextPage ? Number(nextPage) : undefined
+      }
+      return undefined
+    },
+  })
 
-  /* 🔹 Inicial */
-  useEffect(() => {
-    fetchItems()
-  }, [])
-
-  /* 🔹 Filtro de busca */
-  useEffect(() => {
-    const term = search.toLowerCase()
-    setFilteredItems(
-      items.filter((item) =>
-        item.description.toLowerCase().includes(term)
-      )
-    )
-  }, [search, items])
-
-  /* 🔹 Abre modal */
+  // 🔹 Handlers
   const handleOpenItem = (item: Item) => {
     setSelectedItem(item)
     setModalOpen(true)
   }
 
-  /* 🔹 Fecha modal */
   const handleCloseModal = () => {
     setModalOpen(false)
     setSelectedItem(null)
   }
 
+  const handleSavedItem = () => {
+    refetch()
+  }
+
+  // 🔹 Dados achatados
+  const allItems = data?.pages.flatMap((page) => page.results) || []
+  const totalCount = data?.pages[0]?.count || 0
+
   return (
     <PageWrapper>
       <Content>
+        {/* 1. Busca */}
+        <HomeSearch onSearch={setActiveSearch} />
 
-        {/* 🔍 Barra de pesquisa */}
-        <Box sx={{ mt: 1, mb: 4 }}>
-          <SearchField
-            value={search}
-            onChange={(e) => setSearch(e.target.value)}
-            placeholder="Pesquisar itens…"
-            autoFocus
-            fullWidth
-            InputProps={{
-              startAdornment: (
-                <InputAdornment position="start">
-                  <SearchIcon color="action" />
-                </InputAdornment>
-              ),
-            }}
-          />
-        </Box>
-
-        {/* ⏳ Loading */}
-        {loading ? (
+        {/* 2. Loading Inicial ou Erro */}
+        {isLoading ? (
           <Box sx={{ display: 'flex', justifyContent: 'center', mt: 4 }}>
             <CircularProgress />
           </Box>
+        ) : isError ? (
+          <Typography color="error" align="center">
+            Erro ao carregar itens.
+          </Typography>
         ) : (
           <>
-            {/* 📊 Contador */}
+            {/* 3. Contador */}
             <Box sx={{ mb: 2, fontWeight: 600 }}>
-              Itens encontrados: {filteredItems.length}
+              Itens encontrados: {totalCount}
             </Box>
 
-            {/* 📦 Lista de itens */}
-            {filteredItems.map((item) => (
-              <ItemCard
-                key={item.id}
-                sx={{
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'space-between',
-                  gap: 2,
-                }}
-              >
-                <Box sx={{ flex: 1 }}>
-                  {item.description}
-                </Box>
-
-                <IconButton
-                  size="small"
-                  onClick={() => handleOpenItem(item)}
-                  aria-label="Informações do item"
-                >
-                  <InfoOutlinedIcon />
-                </IconButton>
-              </ItemCard>
+            {/* 4. Lista */}
+            {allItems.map((item) => (
+              <HomeItemRow 
+                key={item.id} 
+                item={item} 
+                onOpenDetails={handleOpenItem} 
+              />
             ))}
+
+            {/* 5. Scroll Infinito */}
+            <ScrollSentinel 
+              isFetchingNextPage={isFetchingNextPage}
+              hasNextPage={hasNextPage}
+              onFetchNext={fetchNextPage}
+            />
           </>
         )}
 
-        {/* 🧾 Modal */}
+        {/* 6. Modal */}
         <ItemDetailsModal
           open={modalOpen}
           item={selectedItem}
           onClose={handleCloseModal}
-          onSaved={fetchItems}
+          onSaved={handleSavedItem}
         />
-
       </Content>
     </PageWrapper>
   )

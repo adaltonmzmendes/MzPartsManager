@@ -1,125 +1,25 @@
-import { useState, useEffect } from 'react'
-import {
-  Box,
-  InputAdornment,
-  CircularProgress,
-  IconButton,
-  Typography,
-} from '@mui/material'
-import SearchIcon from '@mui/icons-material/Search'
-import InfoOutlinedIcon from '@mui/icons-material/InfoOutlined'
+import { useState } from 'react'
+import { Box, CircularProgress, Typography } from '@mui/material'
 import { useInfiniteQuery } from '@tanstack/react-query'
-import { useInView } from 'react-intersection-observer'
 
 import api from '@/services/api'
-import { PageWrapper, Content, SearchField, ItemCard } from './Home.styles'
+import { PageWrapper, Content } from './Home.styles'
 import ItemDetailsModal from '../ItemDetails/ItemDetailsModal'
 
-// --- TIPO ---
-export interface Item {
-  id: number
-  description: string
-}
+// Tipos
+import { Item, PaginatedResponse } from './types'
 
-interface PaginatedResponse<T> {
-  count: number
-  next: string | null
-  results: T[]
-}
-
-interface HomeSearchProps {
-  onSearch: (term: string) => void
-}
-
-const HomeSearch = ({ onSearch }: HomeSearchProps) => {
-  const [localInput, setLocalInput] = useState('')
-
-  const handleKeyDown = (event: React.KeyboardEvent<HTMLInputElement>) => {
-    if (event.key === 'Enter') {
-      onSearch(localInput)
-    }
-  }
-
-  return (
-    <Box sx={{ mt: 1, mb: 4 }}>
-      <SearchField
-        value={localInput}
-        onChange={(e) => setLocalInput(e.target.value)}
-        onKeyDown={handleKeyDown}
-        placeholder="Pesquisar..."
-        autoFocus
-        fullWidth
-        InputProps={{
-          startAdornment: (
-            <InputAdornment position="start">
-              <SearchIcon color="action" />
-            </InputAdornment>
-          ),
-        }}
-      />
-    </Box>
-  )
-}
-
-interface HomeItemRowProps {
-  item: Item
-  onOpenDetails: (item: Item) => void
-}
-
-const HomeItemRow = ({ item, onOpenDetails }: HomeItemRowProps) => {
-  return (
-    <ItemCard
-      sx={{
-        display: 'flex',
-        alignItems: 'center',
-        justifyContent: 'space-between',
-        gap: 2,
-      }}
-    >
-      <Box sx={{ flex: 1 }}>{item.description}</Box>
-      <IconButton
-        size="small"
-        onClick={() => onOpenDetails(item)}
-        aria-label="Informações do item"
-      >
-        <InfoOutlinedIcon />
-      </IconButton>
-    </ItemCard>
-  )
-}
-
-interface ScrollSentinelProps {
-  isFetchingNextPage: boolean
-  onVisibilityChange: (inView: boolean) => void
-}
-
-const ScrollSentinel = ({ isFetchingNextPage, onVisibilityChange }: ScrollSentinelProps) => {
-  const { ref, inView } = useInView()
-
-  useEffect(() => {
-    onVisibilityChange(inView)
-  }, [inView, onVisibilityChange])
-
-  return (
-    <Box
-      ref={ref}
-      sx={{
-        display: 'flex',
-        justifyContent: 'center',
-        py: 2,
-        minHeight: 50,
-      }}
-    >
-      {isFetchingNextPage && <CircularProgress size={24} />}
-    </Box>
-  )
-}
+// Componentes
+import { HomeSearch } from './components/HomeSearch'
+import { HomeItemRow } from './components/HomeItemRow'
+import { ScrollSentinel } from './components/ScrollSentinel'
 
 const Home = () => {
   const [activeSearch, setActiveSearch] = useState('')
   const [selectedItem, setSelectedItem] = useState<Item | null>(null)
   const [modalOpen, setModalOpen] = useState(false)
 
+  // 🔹 React Query
   const {
     data,
     isLoading,
@@ -134,7 +34,10 @@ const Home = () => {
     queryFn: async ({ pageParam }) => {
       const params: any = { page: pageParam }
       if (activeSearch) params.search = activeSearch
-      const res = await api.get('api/catalog/items/', { params })
+      
+      const res = await api.get<PaginatedResponse<Item>>('api/catalog/items/', {
+        params,
+      })
       return res.data
     },
     getNextPageParam: (lastPage) => {
@@ -147,12 +50,7 @@ const Home = () => {
     },
   })
 
-  const handleVisibilityChange = (inView: boolean) => {
-    if (inView && hasNextPage) {
-      fetchNextPage()
-    }
-  }
-
+  // 🔹 Handlers
   const handleOpenItem = (item: Item) => {
     setSelectedItem(item)
     setModalOpen(true)
@@ -163,14 +61,21 @@ const Home = () => {
     setSelectedItem(null)
   }
 
+  const handleSavedItem = () => {
+    refetch()
+  }
+
+  // 🔹 Dados achatados
   const allItems = data?.pages.flatMap((page) => page.results) || []
   const totalCount = data?.pages[0]?.count || 0
 
   return (
     <PageWrapper>
       <Content>
+        {/* 1. Busca */}
         <HomeSearch onSearch={setActiveSearch} />
 
+        {/* 2. Loading Inicial ou Erro */}
         {isLoading ? (
           <Box sx={{ display: 'flex', justifyContent: 'center', mt: 4 }}>
             <CircularProgress />
@@ -181,10 +86,12 @@ const Home = () => {
           </Typography>
         ) : (
           <>
+            {/* 3. Contador */}
             <Box sx={{ mb: 2, fontWeight: 600 }}>
               Itens encontrados: {totalCount}
             </Box>
 
+            {/* 4. Lista */}
             {allItems.map((item) => (
               <HomeItemRow 
                 key={item.id} 
@@ -193,18 +100,21 @@ const Home = () => {
               />
             ))}
 
+            {/* 5. Scroll Infinito */}
             <ScrollSentinel 
               isFetchingNextPage={isFetchingNextPage}
-              onVisibilityChange={handleVisibilityChange}
+              hasNextPage={hasNextPage}
+              onFetchNext={fetchNextPage}
             />
           </>
         )}
 
+        {/* 6. Modal */}
         <ItemDetailsModal
           open={modalOpen}
           item={selectedItem}
           onClose={handleCloseModal}
-          onSaved={() => refetch()}
+          onSaved={handleSavedItem}
         />
       </Content>
     </PageWrapper>

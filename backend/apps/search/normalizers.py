@@ -1,4 +1,3 @@
-# apps/search/normalizers.py
 from __future__ import annotations
 
 

@@ -1,4 +1,3 @@
-import { useEffect } from 'react'
 import { Box, CircularProgress } from '@mui/material'
 import { useInView } from 'react-intersection-observer'
 
@@ -13,13 +12,13 @@ export const ScrollSentinel = ({
   hasNextPage,
   onFetchNext,
 }: ScrollSentinelProps) => {
-  const { ref, inView } = useInView()
-
-  useEffect(() => {
-    if (inView && hasNextPage) {
-      onFetchNext()
-    }
-  }, [inView, hasNextPage, onFetchNext])
+  const { ref } = useInView({
+    onChange: (inView) => {
+      if (inView && hasNextPage) {
+        onFetchNext()
+      }
+    },
+  })
 
   return (
     <Box
@@ -28,7 +27,7 @@ export const ScrollSentinel = ({
         display: 'flex',
         justifyContent: 'center',
         py: 2,
-        minHeight: 50, // Garante altura para o observer funcionar
+        minHeight: 50,
       }}
     >
       {isFetchingNextPage && <CircularProgress size={24} />}

@@ -108,8 +108,14 @@ const ItemEditor = ({ item, onClose, onSaved }: ItemEditorProps) => {
 
       onSaved()
       onClose()
-    } catch (error) {
-      console.error('Erro ao salvar item:', error)
+    } catch (error: any) {
+      // Isso vai exibir o erro exato na sua tela
+      const errorMessage = error.response?.data 
+        ? JSON.stringify(error.response.data, null, 2) 
+        : error.message;
+        
+      alert(`Erro 400 do Backend:\n\n${errorMessage}`);
+      console.error('Detalhes do erro:', error.response?.data);
     }
   }
 

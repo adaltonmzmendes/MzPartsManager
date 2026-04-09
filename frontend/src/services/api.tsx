@@ -1,14 +1,14 @@
 import axios, {
   AxiosInstance,
-  AxiosRequestConfig,
+  InternalAxiosRequestConfig,
   AxiosResponse,
   AxiosError,
 } from 'axios'
 
-const baseUrl = 'http://127.0.0.1:8000/'
-
+// O Nginx já atua como proxy reverso roteando "/api/" para o container web:8000.
+// Usar "/" previne o erro de CORS porque o navegador enxerga apenas a origem do frontend.
 const api: AxiosInstance = axios.create({
-  baseURL: baseUrl,
+  baseURL: '/',
   timeout: 5000,
   headers: {
     'Content-Type': 'application/json',
@@ -16,17 +16,15 @@ const api: AxiosInstance = axios.create({
   },
 })
 
+// Tipagem atualizada para InternalAxiosRequestConfig para suprir exigência das versões recentes do Axios.
 api.interceptors.request.use(
-  (config: AxiosRequestConfig) => {
+  (config: InternalAxiosRequestConfig) => {
     const token = localStorage.getItem('Token')
 
     if (token) {
-      config.headers = {
-        ...config.headers,
-        Authorization: `Token ${token}`,
-      }
-    } else if (config.headers) {
-      delete config.headers.Authorization
+      config.headers.set('Authorization', `Token ${token}`)
+    } else {
+      config.headers.delete('Authorization')
     }
 
     return config

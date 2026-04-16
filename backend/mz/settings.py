@@ -6,7 +6,14 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 SECRET_KEY = config("DJANGO_SECRET_KEY")
 DEBUG = True
 
-ALLOWED_HOSTS = ['localhost', '127.0.0.1', 'web']
+ALLOWED_HOSTS = [
+    'localhost',
+    '127.0.0.1',
+    'web',
+    'mzpartsmanager.com',
+    'www.mzpartsmanager.com',
+    '72.61.135.158'
+]
 
 INSTALLED_APPS = [
     'django.contrib.admin',
@@ -43,11 +50,21 @@ CORS_ALLOWED_ORIGINS = [
     'http://localhost:5173',
     'http://localhost',
     'http://127.0.0.1',
+    'http://mzpartsmanager.com',
+    'https://mzpartsmanager.com',
+    'http://www.mzpartsmanager.com',
+    'https://www.mzpartsmanager.com',
+    'http://72.61.135.158',
 ]
 
 CSRF_TRUSTED_ORIGINS = [
     'http://localhost',
     'http://127.0.0.1',
+    'http://mzpartsmanager.com',
+    'https://mzpartsmanager.com',
+    'http://www.mzpartsmanager.com',
+    'https://www.mzpartsmanager.com',
+    'http://72.61.135.158',
 ]
 
 CORS_ALLOW_CREDENTIALS = True

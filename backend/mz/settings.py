@@ -4,7 +4,7 @@ from decouple import config
 BASE_DIR = Path(__file__).resolve().parent.parent
 
 SECRET_KEY = config("DJANGO_SECRET_KEY")
-DEBUG = True
+DEBUG = config("DEBUG", default=False, cast=bool)
 
 ALLOWED_HOSTS = [
     'localhost',
@@ -32,6 +32,10 @@ INSTALLED_APPS = [
     'apps.search',
     'apps.inventory',
     'apps.cart',
+    'apps.opportunities',
+    'apps.crm',
+    'apps.dashboard',
+    'apps.purchases',
 ]
 
 MIDDLEWARE = [

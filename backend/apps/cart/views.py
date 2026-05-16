@@ -3,10 +3,12 @@ from rest_framework.decorators import action
 from rest_framework.response import Response
 from rest_framework.views import APIView
 from django.shortcuts import get_object_or_404
+from django.db import transaction
 from .models import Cart, CartItem
 from .serializers import CartSerializer
 from apps.multicompany.models import Company
 from .services import validar_hmac_nfeio, emitir_nfce_nfeio
+from apps.inventory.models import InventoryMovement
 
 class CartViewSet(viewsets.ModelViewSet):
     serializer_class = CartSerializer
@@ -67,9 +69,24 @@ class CartViewSet(viewsets.ModelViewSet):
         if not cart or not cart.items.exists():
             return Response({"detail": "Carrinho vazio ou não encontrado."}, status=status.HTTP_400_BAD_REQUEST)
         
-        cart.status = 'closed'
-        cart.payment_method = payment_method
-        cart.save(update_fields=['status', 'payment_method'])
+        with transaction.atomic():
+            cart.status = 'closed'
+            cart.payment_method = payment_method
+            cart.save(update_fields=['status', 'payment_method'])
+
+            for cart_item in cart.items.select_related('item__inventory'):
+                inventory = cart_item.item.inventory
+                inventory.quantity -= cart_item.quantity
+                inventory.save(update_fields=['quantity'])
+                
+                InventoryMovement.objects.create(
+                    inventory_item=inventory,
+                    movement_type='out',
+                    quantity=cart_item.quantity,
+                    description=f"Venda - Carrinho #{cart.id}",
+                    user=user
+                )
+                
         return Response({"detail": "Venda finalizada com sucesso.", "cart_id": cart.id})
 
     @action(detail=False, methods=['get'])

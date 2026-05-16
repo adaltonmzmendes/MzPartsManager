@@ -38,6 +38,9 @@ export const ItemRow = ({ item, showPrice, showCost, onOpenDetails, actions }: I
         
         {(showCost || showPrice) && (
           <Box sx={{ display: 'flex', gap: 2 }}>
+            <Typography variant="body2" color="text.secondary">
+              Estoque: {item.inventory?.quantity ?? 0}
+            </Typography>
             {showCost && (
               <Typography variant="body2" color="text.secondary">
                 Custo: {formatCurrency(item.inventory?.cost_price)}

@@ -28,6 +28,9 @@ import LogoutIcon from '@mui/icons-material/Logout'
 import ShoppingCartIcon from '@mui/icons-material/ShoppingCart'
 import ArchiveIcon from '@mui/icons-material/Archive'
 import ReceiptIcon from '@mui/icons-material/Receipt'
+import MoneyOffIcon from '@mui/icons-material/MoneyOff'
+import ContactsIcon from '@mui/icons-material/Contacts'
+import AssessmentIcon from '@mui/icons-material/Assessment'
 
 import api from '@/services/api'
 import { CartDrawer } from '@/components/CartDrawer'
@@ -107,7 +110,16 @@ export default function Navbar({ content }: NavbarProps) {
     },
   })
 
+  const { data: purchaseData } = useQuery({
+    queryKey: ['purchaseCart'],
+    queryFn: async () => {
+      const res = await api.get('api/purchases/')
+      return res.data[0] || { items: [] }
+    },
+  })
+
   const cartItemsCount = cartData?.items?.reduce((acc: number, item: any) => acc + item.quantity, 0) || 0
+  const purchaseCartCount = purchaseData?.items?.reduce((acc: number, item: any) => acc + item.quantity, 0) || 0
 
   const logoutUser = async () => {
     try {
@@ -158,6 +170,13 @@ export default function Navbar({ content }: NavbarProps) {
                 </Badge>
               </IconButton>
             )}
+            {(path === '/purchases' || path === '/purchases/list') && (
+              <IconButton color="inherit" onClick={() => navigate('/purchases/list')}>
+                <Badge badgeContent={purchaseCartCount} color="error">
+                  <ShoppingCartIcon />
+                </Badge>
+              </IconButton>
+            )}
           </Box>
         </Toolbar>
       </AppBar>
@@ -195,7 +214,7 @@ export default function Navbar({ content }: NavbarProps) {
             </ListItem>
 
             <ListItem disablePadding>
-              <ListItemButton component={Link} to="/purchases" selected={path === '/purchases'} onClick={handleDrawerClose}>
+              <ListItemButton component={Link} to="/purchases" selected={path.startsWith('/purchases')} onClick={handleDrawerClose}>
                 <ListItemIcon><ShoppingCartIcon /></ListItemIcon>
                 <ListItemText primary="Compras" />
               </ListItemButton>
@@ -212,6 +231,27 @@ export default function Navbar({ content }: NavbarProps) {
               <ListItemButton component={Link} to="/archived" selected={path === '/archived'} onClick={handleDrawerClose}>
                 <ListItemIcon><ArchiveIcon /></ListItemIcon>
                 <ListItemText primary="Arquivados" />
+              </ListItemButton>
+            </ListItem>
+
+            <ListItem disablePadding>
+              <ListItemButton component={Link} to="/opportunities" selected={path === '/opportunities'} onClick={handleDrawerClose}>
+                <ListItemIcon><MoneyOffIcon /></ListItemIcon>
+                <ListItemText primary="Vendas Perdidas" />
+              </ListItemButton>
+            </ListItem>
+
+            <ListItem disablePadding>
+              <ListItemButton component={Link} to="/crm" selected={path === '/crm'} onClick={handleDrawerClose}>
+                <ListItemIcon><ContactsIcon /></ListItemIcon>
+                <ListItemText primary="Clientes e Fornecedores" />
+              </ListItemButton>
+            </ListItem>
+
+            <ListItem disablePadding>
+              <ListItemButton component={Link} to="/dashboard" selected={path === '/dashboard'} onClick={handleDrawerClose}>
+                <ListItemIcon><AssessmentIcon /></ListItemIcon>
+                <ListItemText primary="Dashboard" />
               </ListItemButton>
             </ListItem>
 

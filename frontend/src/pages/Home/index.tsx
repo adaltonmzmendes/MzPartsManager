@@ -1,8 +1,9 @@
 import { useState } from 'react'
-import { Box, CircularProgress, Typography, IconButton, Snackbar, Alert } from '@mui/material'
+import { Box, CircularProgress, Typography, IconButton, Snackbar, Alert, Button } from '@mui/material'
 import { useInfiniteQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import HomeIcon from '@mui/icons-material/Home'
 import AddShoppingCartIcon from '@mui/icons-material/AddShoppingCart'
+import MoneyOffIcon from '@mui/icons-material/MoneyOff'
 
 import api from '@/services/api'
 import { PageWrapper, Content } from './Home.styles'
@@ -13,11 +14,13 @@ import { Search } from '../../components/Search'
 import { ItemRow } from '@/components/ItemRow'
 import { ScrollSentinel } from '../../components/ScrollSentinel'
 import { PageHeader } from '@/components/PageHeader'
+import { OpportunitiesModal } from '@/components/OpportunitiesModal'
 
 const Home = () => {
   const queryClient = useQueryClient()
   const [activeSearch, setActiveSearch] = useState('')
   const [selectedItem, setSelectedItem] = useState<Item | null>(null)
+  const [opportunitiesModalOpen, setOpportunitiesModalOpen] = useState(false)
   const [snackbar, setSnackbar] = useState<{ open: boolean; message: string; severity: 'success' | 'error' }>({
     open: false,
     message: '',
@@ -72,7 +75,19 @@ const Home = () => {
           color="primary"
         />
 
-        <Search onSearch={setActiveSearch} />
+        <Search 
+          onSearch={setActiveSearch} 
+          action={
+            <Button 
+              variant="contained" 
+              color="error"
+              startIcon={<MoneyOffIcon />}
+              onClick={() => setOpportunitiesModalOpen(true)}
+            >
+              Vendas Perdidas
+            </Button>
+          }
+        />
 
         {isLoading ? (
           <Box sx={{ display: 'flex', justifyContent: 'center', mt: 4 }}><CircularProgress /></Box>
@@ -117,6 +132,12 @@ const Home = () => {
           item={selectedItem}
           onClose={() => setSelectedItem(null)}
           onSaved={() => refetch()}
+        />
+
+        <OpportunitiesModal
+          open={opportunitiesModalOpen}
+          onClose={() => setOpportunitiesModalOpen(false)}
+          initialProductName={activeSearch}
         />
 
         <Snackbar

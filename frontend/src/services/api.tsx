@@ -5,8 +5,12 @@ import axios, {
   AxiosError,
 } from 'axios'
 
+// A MÁGICA ESTÁ AQUI: Verifica se é o seu PC ou a VPS
+const isLocalhost = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1'
+const apiURL = isLocalhost ? 'http://localhost:8000' : '/'
+
 const api: AxiosInstance = axios.create({
-  baseURL: '/',
+  baseURL: apiURL,
   timeout: 5000,
   headers: {
     'Content-Type': 'application/json',

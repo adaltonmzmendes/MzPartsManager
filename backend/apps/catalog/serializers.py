@@ -1,8 +1,9 @@
 from rest_framework import serializers
-from .models import Item, Conversion, Tag, Application, GlobalItem, ItemApplication
+from .models import Item, Conversion, Tag, Application, GlobalItem, ItemApplication, ItemImage
 from apps.catalog.utils import normalize_description, normalize_name
 from apps.catalog.services.auto_tags import apply_auto_tags
 from apps.inventory.serializers import InventoryItemSerializer
+
 
 class GlobalItemSuggestionSerializer(serializers.ModelSerializer):
     conversions = serializers.SlugRelatedField(many=True, read_only=True, slug_field='name')
@@ -12,6 +13,12 @@ class GlobalItemSuggestionSerializer(serializers.ModelSerializer):
     class Meta:
         model = GlobalItem
         fields = ['id', 'normalized_description', 'conversions', 'tags', 'applications']
+
+
+class ItemImageSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = ItemImage
+        fields = ['id', 'image', 'order']
 
 
 class ItemSerializer(serializers.ModelSerializer):
@@ -24,11 +31,12 @@ class ItemSerializer(serializers.ModelSerializer):
     applications_input = serializers.ListField(child=serializers.CharField(), write_only=True, required=False)
 
     inventory = InventoryItemSerializer(read_only=True)
+    images = ItemImageSerializer(many=True, read_only=True)
 
     class Meta:
         model = Item
         fields = [
-            'id', 'description', 'inventory', 'conversions', 'conversions_input', 
+            'id', 'description', 'inventory', 'images', 'conversions', 'conversions_input', 
             'tags', 'tags_input', 'applications', 'applications_input'
         ]
 

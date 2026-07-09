@@ -3,11 +3,12 @@ from rest_framework.decorators import action
 from rest_framework.response import Response
 from django.shortcuts import get_object_or_404
 
-from .models import Item
+from .models import Item, ItemImage
 from .serializers import ItemSerializer, GlobalItemSuggestionSerializer
 from .pagination import StandardResultsSetPagination
 
 from apps.search.services import apply_search
+
 
 class ItemViewSet(viewsets.ModelViewSet):
     serializer_class = ItemSerializer
@@ -56,3 +57,20 @@ class ItemViewSet(viewsets.ModelViewSet):
 
         serializer = GlobalItemSuggestionSerializer(item.global_item)
         return Response(serializer.data)
+
+    @action(detail=True, methods=["post"])
+    def upload_images(self, request, pk=None):
+        item = self.get_object()
+        images = request.FILES.getlist('images')
+        
+        for index, img in enumerate(images):
+            ItemImage.objects.create(item=item, image=img, order=index)
+            
+        return Response(status=status.HTTP_201_CREATED)
+
+    @action(detail=True, methods=["delete"], url_path=r'images/(?P<image_id>\d+)')
+    def delete_image(self, request, pk=None, image_id=None):
+        item = self.get_object()
+        image = get_object_or_404(ItemImage, pk=image_id, item=item)
+        image.delete()
+        return Response(status=status.HTTP_204_NO_CONTENT)

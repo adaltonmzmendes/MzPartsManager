@@ -5,8 +5,14 @@ import Description from './fields/Description'
 import Conversions from './fields/Conversions'
 import Tags from './fields/Tags'
 import Applications from './fields/Applications'
+import ImagesCarousel from './fields/ImagesCarousel'
 
 import { formContainerSx } from './ItemDetailsForm.styles'
+
+interface ItemImage {
+  id: number
+  image: string
+}
 
 interface GlobalSuggestions {
   normalized_description: string | null
@@ -24,12 +30,17 @@ interface ItemFormState {
 
 interface ItemDetailsFormProps {
   form: ItemFormState
-  globalSuggestions: GlobalSuggestions | null
+  existingImages: ItemImage[]
+  newImages: File[]
+  globalSuggestions?: GlobalSuggestions | null
   activeTab: number
   onTabChange: (newValue: number) => void
   onChange: <K extends keyof ItemFormState>(
     field: K
   ) => (value: ItemFormState[K]) => void
+  onAddImages: (files: File[]) => void
+  onRemoveNewImage: (index: number) => void
+  onRemoveExistingImage: (id: number) => void
   onAcceptSuggestion: (
     field: keyof Omit<ItemFormState, 'description'>,
     value: string
@@ -38,15 +49,27 @@ interface ItemDetailsFormProps {
 
 const ItemDetailsForm = ({
   form,
+  existingImages,
+  newImages,
   globalSuggestions,
   activeTab,
   onTabChange,
   onChange,
+  onAddImages,
+  onRemoveNewImage,
+  onRemoveExistingImage,
   onAcceptSuggestion,
 }: ItemDetailsFormProps) => {
 
   const renderLocalTab = () => (
     <>
+      <ImagesCarousel 
+        existingImages={existingImages} 
+        newImages={newImages} 
+        onAddImages={onAddImages} 
+        onRemoveNewImage={onRemoveNewImage}
+        onRemoveExistingImage={onRemoveExistingImage}
+      />
       <Description
         value={form.description}
         onChange={onChange('description')}

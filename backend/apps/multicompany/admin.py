@@ -36,6 +36,7 @@ class CompanyAdmin(admin.ModelAdmin):
     fieldsets = (
         ("Identidade Legal", {
             "fields": (
+                "logo",
                 "razao_social",
                 "nome_fantasia",
                 "cnpj",

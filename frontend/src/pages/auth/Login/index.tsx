@@ -10,9 +10,6 @@ import MyMessage from '@/components/Message'
 
 import api from '@/services/api'
 
-/* ===========================
-   TYPES
-=========================== */
 interface LoginFormData {
   email: string
   password: string
@@ -25,11 +22,15 @@ interface MessageState {
 
 interface LoginResponse {
   token: string
+  user: {
+    id: number
+    email: string
+    company_id: string
+    company_name: string
+    company_logo: string | null
+  }
 }
 
-/* ===========================
-   COMPONENT
-=========================== */
 const Login = () => {
   const navigate = useNavigate()
   const { handleSubmit, control } = useForm<LoginFormData>()
@@ -49,9 +50,16 @@ const Login = () => {
       )
 
       localStorage.setItem('Token', response.data.token)
+      localStorage.setItem('CompanyName', response.data.user.company_name)
+      
+      if (response.data.user.company_logo) {
+        localStorage.setItem('CompanyLogo', response.data.user.company_logo)
+      } else {
+        localStorage.removeItem('CompanyLogo')
+      }
+
       navigate('/home')
     } catch (error: unknown) {
-      // 🔒 Narrowing seguro (sem any)
       if (
         typeof error === 'object' &&
         error !== null &&

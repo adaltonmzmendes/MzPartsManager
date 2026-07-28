@@ -40,13 +40,18 @@ class LoginViewSet(viewsets.ViewSet):
 
         _, token = AuthToken.objects.create(user)
 
+        logo_url = None
+        if user.company.logo:
+            logo_url = request.build_absolute_uri(user.company.logo.url)
+
         return Response(
             {
                 "user": {
                     "id": user.id,
                     "email": user.email,
                     "company_id": str(user.company.id),
-                    "company_name": user.company.razao_social,
+                    "company_name": user.company.nome_fantasia or user.company.razao_social,
+                    "company_logo": logo_url,
                 },
                 "token": token,
             },

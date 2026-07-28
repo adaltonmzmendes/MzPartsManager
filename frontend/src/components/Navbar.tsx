@@ -14,7 +14,8 @@ import {
   ListItemIcon,
   ListItemText,
   Badge,
-  ClickAwayListener
+  ClickAwayListener,
+  Avatar
 } from '@mui/material'
 import MuiAppBar, { AppBarProps as MuiAppBarProps } from '@mui/material/AppBar'
 import { Link, useLocation, useNavigate } from 'react-router-dom'
@@ -102,6 +103,15 @@ export default function Navbar({ content }: NavbarProps) {
   const [open, setOpen] = useState(false)
   const [cartOpen, setCartOpen] = useState(false)
 
+  const companyName = localStorage.getItem('CompanyName') || 'MzPartsManager'
+  const companyLogo = localStorage.getItem('CompanyLogo')
+
+  const getInitials = (name: string) => {
+    const parts = name.trim().split(' ')
+    if (parts.length >= 2) return (parts[0][0] + parts[1][0]).toUpperCase()
+    return name.substring(0, 2).toUpperCase()
+  }
+
   const { data: cartData } = useQuery({
     queryKey: ['cart'],
     queryFn: async () => {
@@ -126,6 +136,8 @@ export default function Navbar({ content }: NavbarProps) {
       await api.post('logout/')
     } finally {
       localStorage.removeItem('Token')
+      localStorage.removeItem('CompanyName')
+      localStorage.removeItem('CompanyLogo')
       navigate('/')
     }
   }
@@ -153,14 +165,22 @@ export default function Navbar({ content }: NavbarProps) {
             </IconButton>
           </Box>
 
-          <Typography
-            variant="h6"
-            noWrap
-            component="div"
-            sx={{ fontWeight: 600, textAlign: 'center' }}
-          >
-            MzPartsManager
-          </Typography>
+          <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 1.5 }}>
+            <Avatar 
+              src={companyLogo || undefined} 
+              sx={{ width: 40, height: 40, bgcolor: 'primary.main', fontSize: '1.2rem', fontWeight: 'bold' }}
+            >
+              {!companyLogo && getInitials(companyName)}
+            </Avatar>
+            <Typography
+              variant="h6"
+              noWrap
+              component="div"
+              sx={{ fontWeight: 600, textAlign: 'center', display: { xs: 'none', sm: 'block' } }}
+            >
+              {companyName}
+            </Typography>
+          </Box>
 
           <Box sx={{ flex: 1, display: 'flex', justifyContent: 'flex-end' }}>
             {path === '/home' && (

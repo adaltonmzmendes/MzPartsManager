@@ -22,6 +22,7 @@ class Company(models.Model):
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
 
     # Identidade legal
+    logo = models.ImageField(upload_to="company_logos/", blank=True, null=True)
     razao_social = models.CharField(max_length=255)
     nome_fantasia = models.CharField(max_length=255, blank=True, default="")
     cnpj = models.CharField(max_length=18, unique=True)

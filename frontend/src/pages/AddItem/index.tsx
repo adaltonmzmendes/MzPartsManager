@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom'
 import { Box, Button, TextField, Typography, Paper, Autocomplete, Stack } from '@mui/material'
 import { useMutation, useQueryClient } from '@tanstack/react-query'
 import api from '@/services/api'
+import ImagesCarousel from '@/components/ImagesCarousel'
 
 interface AddItemPayload {
   description: string
@@ -19,15 +20,27 @@ const AddItem = () => {
   const [conversions, setConversions] = useState<string[]>([])
   const [tags, setTags] = useState<string[]>([])
   const [applications, setApplications] = useState<string[]>([])
+  const [newImages, setNewImages] = useState<File[]>([])
   const [errorMsg, setErrorMsg] = useState('')
 
   const mutation = useMutation({
     mutationFn: async (payload: AddItemPayload) => {
       const { data } = await api.post('/api/catalog/items/', payload)
+
+      if (newImages.length > 0) {
+        const formData = new FormData()
+        newImages.forEach(file => formData.append('images', file))
+        
+        await api.post(`/api/catalog/items/${data.id}/upload_images/`, formData, {
+          headers: { 'Content-Type': 'multipart/form-data' }
+        })
+      }
+
       return data
     },
     onSuccess: (data) => {
       queryClient.invalidateQueries({ queryKey: ['purchases'] })
+      queryClient.invalidateQueries({ queryKey: ['items'] })
       navigate(`/purchases/${data.id}/prices`)
     },
     onError: (error: any) => {
@@ -104,6 +117,14 @@ const AddItem = () => {
               renderInput={(params) => (
                 <TextField {...params} label="Aplicações (Pressione Enter para adicionar)" />
               )}
+            />
+
+            <ImagesCarousel 
+              existingImages={[]} 
+              newImages={newImages} 
+              onAddImages={(files) => setNewImages(prev => [...prev, ...files])} 
+              onRemoveNewImage={(index) => setNewImages(prev => prev.filter((_, i) => i !== index))}
+              onRemoveExistingImage={() => {}}
             />
 
             <Box sx={{ display: 'flex', justifyContent: 'flex-end', gap: 2, mt: 2 }}>

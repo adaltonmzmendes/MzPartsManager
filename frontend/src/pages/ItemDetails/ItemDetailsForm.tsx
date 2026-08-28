@@ -5,7 +5,7 @@ import Description from './fields/Description'
 import Conversions from './fields/Conversions'
 import Tags from './fields/Tags'
 import Applications from './fields/Applications'
-import ImagesCarousel from './fields/ImagesCarousel'
+import ImagesCarousel from '@/components/ImagesCarousel'
 
 import { formContainerSx } from './ItemDetailsForm.styles'
 

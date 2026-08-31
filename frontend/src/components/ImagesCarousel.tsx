@@ -7,6 +7,7 @@ import ChevronRightIcon from '@mui/icons-material/ChevronRight'
 import { useRef, useState, forwardRef } from 'react'
 import type { ReactElement } from 'react'
 import type { TransitionProps } from '@mui/material/transitions'
+import imageCompression from 'browser-image-compression'
 
 const Transition = forwardRef(function Transition(
   props: TransitionProps & { children: ReactElement },
@@ -37,10 +38,41 @@ export default function ImagesCarousel({
 }: ImagesCarouselProps) {
   const fileInputRef = useRef<HTMLInputElement>(null)
   const [viewerIndex, setViewerIndex] = useState<number | null>(null)
+  const [isCompressing, setIsCompressing] = useState(false)
 
-  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    if (e.target.files) {
-      onAddImages(Array.from(e.target.files))
+  const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (!e.target.files?.length) return
+
+    setIsCompressing(true)
+    const files = Array.from(e.target.files)
+    const compressedFiles: File[] = []
+
+    const options = {
+      maxSizeMB: 0.5,
+      maxWidthOrHeight: 1280,
+      useWebWorker: true,
+      fileType: 'image/webp' as const
+    }
+
+    for (const file of files) {
+      try {
+        const compressedBlob = await imageCompression(file, options)
+        const compressedFile = new File(
+          [compressedBlob], 
+          file.name.replace(/\.[^/.]+$/, ".webp"), 
+          { type: 'image/webp' }
+        )
+        compressedFiles.push(compressedFile)
+      } catch (error) {
+        compressedFiles.push(file)
+      }
+    }
+
+    onAddImages(compressedFiles)
+    setIsCompressing(false)
+    
+    if (fileInputRef.current) {
+      fileInputRef.current.value = ''
     }
   }
 
@@ -69,7 +101,7 @@ export default function ImagesCarousel({
   return (
     <Box sx={{ mb: 4 }}>
       <Typography variant="subtitle2" color="text.secondary" gutterBottom sx={{ ml: 1, fontWeight: 600 }}>
-        Fotos do Item
+        Fotos do Item {isCompressing && '(Comprimindo...)'}
       </Typography>
       
       <Box sx={{ 
@@ -82,23 +114,23 @@ export default function ImagesCarousel({
         scrollbarWidth: 'none'
       }}>
         <Box 
-          onClick={() => fileInputRef.current?.click()}
+          onClick={() => !isCompressing && fileInputRef.current?.click()}
           sx={{ 
             minWidth: 120, 
             height: 160, 
             borderRadius: 4, 
-            bgcolor: 'action.hover', 
+            bgcolor: isCompressing ? 'action.disabledBackground' : 'action.hover', 
             display: 'flex', 
             alignItems: 'center', 
             justifyContent: 'center', 
-            cursor: 'pointer',
+            cursor: isCompressing ? 'wait' : 'pointer',
             scrollSnapAlign: 'start',
             flexShrink: 0,
             transition: 'background-color 0.2s',
-            '&:hover': { bgcolor: 'action.selected' }
+            '&:hover': { bgcolor: isCompressing ? 'action.disabledBackground' : 'action.selected' }
           }}
         >
-          <AddPhotoAlternateIcon color="action" fontSize="large" />
+          <AddPhotoAlternateIcon color={isCompressing ? "disabled" : "action"} fontSize="large" />
           <input type="file" hidden multiple accept="image/*" ref={fileInputRef} onChange={handleFileChange} />
         </Box>
         

@@ -31,9 +31,7 @@ const AddItem = () => {
         const formData = new FormData()
         newImages.forEach(file => formData.append('images', file))
         
-        await api.post(`/api/catalog/items/${data.id}/upload_images/`, formData, {
-          headers: { 'Content-Type': 'multipart/form-data' }
-        })
+        await api.post(`/api/catalog/items/${data.id}/upload_images/`, formData)
       }
 
       return data

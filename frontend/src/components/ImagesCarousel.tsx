@@ -106,7 +106,7 @@ export default function ImagesCarousel({
       
       <Box sx={{ 
         display: 'flex', 
-        gap: 2, 
+        gap: { xs: 1.5, sm: 2 }, 
         overflowX: 'auto', 
         pb: 2,
         scrollSnapType: 'x mandatory',
@@ -116,9 +116,9 @@ export default function ImagesCarousel({
         <Box 
           onClick={() => !isCompressing && fileInputRef.current?.click()}
           sx={{ 
-            minWidth: 120, 
-            height: 160, 
-            borderRadius: 4, 
+            minWidth: { xs: 90, sm: 120 }, 
+            height: { xs: 120, sm: 160 }, 
+            borderRadius: { xs: 2, sm: 4 }, 
             bgcolor: isCompressing ? 'action.disabledBackground' : 'action.hover', 
             display: 'flex', 
             alignItems: 'center', 
@@ -130,7 +130,7 @@ export default function ImagesCarousel({
             '&:hover': { bgcolor: isCompressing ? 'action.disabledBackground' : 'action.selected' }
           }}
         >
-          <AddPhotoAlternateIcon color={isCompressing ? "disabled" : "action"} fontSize="large" />
+          <AddPhotoAlternateIcon color={isCompressing ? "disabled" : "action"} sx={{ fontSize: { xs: 32, sm: 40 } }} />
           <input type="file" hidden multiple accept="image/*" ref={fileInputRef} onChange={handleFileChange} />
         </Box>
         
@@ -140,9 +140,9 @@ export default function ImagesCarousel({
             onClick={() => setViewerIndex(i)}
             sx={{ 
               position: 'relative', 
-              minWidth: 120, 
-              height: 160, 
-              borderRadius: 4, 
+              minWidth: { xs: 90, sm: 120 }, 
+              height: { xs: 120, sm: 160 }, 
+              borderRadius: { xs: 2, sm: 4 }, 
               overflow: 'hidden', 
               scrollSnapAlign: 'start', 
               flexShrink: 0, 

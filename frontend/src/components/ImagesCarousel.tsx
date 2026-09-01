@@ -116,6 +116,7 @@ export default function ImagesCarousel({
         <Box 
           onClick={() => !isCompressing && fileInputRef.current?.click()}
           sx={{ 
+            width: { xs: 90, sm: 120 },
             minWidth: { xs: 90, sm: 120 }, 
             height: { xs: 120, sm: 160 }, 
             borderRadius: { xs: 2, sm: 4 }, 
@@ -140,6 +141,7 @@ export default function ImagesCarousel({
             onClick={() => setViewerIndex(i)}
             sx={{ 
               position: 'relative', 
+              width: { xs: 90, sm: 120 },
               minWidth: { xs: 90, sm: 120 }, 
               height: { xs: 120, sm: 160 }, 
               borderRadius: { xs: 2, sm: 4 }, 

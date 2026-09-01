@@ -1,14 +1,9 @@
-import axios, {
-  AxiosInstance,
-  AxiosRequestConfig,
-  AxiosResponse,
-  AxiosError,
-} from 'axios'
+import axios from 'axios'
 
-const baseUrl = 'http://127.0.0.1:8000/'
-
-const api: AxiosInstance = axios.create({
-  baseURL: baseUrl,
+const api = axios.create({
+  baseURL: ['localhost', '127.0.0.1'].includes(window.location.hostname)
+    ? 'http://localhost:8000'
+    : '/',
   timeout: 5000,
   headers: {
     'Content-Type': 'application/json',
@@ -16,28 +11,23 @@ const api: AxiosInstance = axios.create({
   },
 })
 
-api.interceptors.request.use(
-  (config: AxiosRequestConfig) => {
-    const token = localStorage.getItem('Token')
+api.interceptors.request.use((config) => {
+  const token = localStorage.getItem('Token')
+  const isAuthRoute = config.url?.match(/\/(accounts\/login|accounts\/register)/)
 
-    if (token) {
-      config.headers = {
-        ...config.headers,
-        Authorization: `Token ${token}`,
-      }
-    } else if (config.headers) {
-      delete config.headers.Authorization
-    }
+  if (token && !isAuthRoute) {
+    config.headers.set('Authorization', `Token ${token}`)
+  } else {
+    config.headers.delete('Authorization')
+  }
 
-    return config
-  },
-  (error: AxiosError) => Promise.reject(error)
-)
+  return config
+})
 
 api.interceptors.response.use(
-  (response: AxiosResponse) => response,
-  (error: AxiosError) => {
-    if (error.response?.status === 401) {
+  (response) => response,
+  (error) => {
+    if (error.response?.status === 401 && !error.config?.url?.includes('/accounts/login')) {
       localStorage.removeItem('Token')
       window.location.href = '/'
     }

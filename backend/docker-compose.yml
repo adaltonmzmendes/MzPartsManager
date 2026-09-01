@@ -1,0 +1,38 @@
+version: '3.8'
+
+services:
+  db:
+    image: postgres:15-alpine
+    volumes:
+      - postgres_data:/var/lib/postgresql/data/
+    environment:
+      - POSTGRES_DB=${DB_NAME}
+      - POSTGRES_USER=${DB_USER}
+      - POSTGRES_PASSWORD=${DB_PASSWORD}
+    restart: always
+
+  web:
+    build: .
+    command: gunicorn --bind 0.0.0.0:8000 mz.wsgi:application
+    volumes:
+      - .:/app
+    ports:
+      - "8000:8000"
+    env_file:
+      - .env
+    depends_on:
+      - db
+    restart: always
+
+  frontend:
+    build:
+      context: ../frontend    # Aponta para a pasta do seu React
+      dockerfile: Dockerfile
+    ports:
+      - "80:80"               # Expõe a porta padrão de internet (HTTP)
+    depends_on:
+      - web
+    restart: always
+
+volumes:
+  postgres_data:

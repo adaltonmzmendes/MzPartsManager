@@ -1,106 +1,124 @@
 import { useState } from 'react'
-import { Box, CircularProgress, Typography } from '@mui/material'
-import { useInfiniteQuery } from '@tanstack/react-query'
+import { Box, CircularProgress, Typography, IconButton, Snackbar, Alert, Button } from '@mui/material'
+import { useInfiniteQuery, useMutation, useQueryClient } from '@tanstack/react-query'
+import HomeIcon from '@mui/icons-material/Home'
+import AddShoppingCartIcon from '@mui/icons-material/AddShoppingCart'
+import MoneyOffIcon from '@mui/icons-material/MoneyOff'
 
 import api from '@/services/api'
 import { PageWrapper, Content } from './Home.styles'
 import ItemDetailsModal from '../ItemDetails/ItemDetailsModal'
 
-// Tipos
 import { Item, PaginatedResponse } from './types'
-
-// Componentes
-import { HomeSearch } from './components/HomeSearch'
-import { HomeItemRow } from './components/HomeItemRow'
-import { ScrollSentinel } from './components/ScrollSentinel'
+import { Search } from '../../components/Search'
+import { ItemRow } from '@/components/ItemRow'
+import { ScrollSentinel } from '../../components/ScrollSentinel'
+import { PageHeader } from '@/components/PageHeader'
+import { OpportunitiesModal } from '@/components/OpportunitiesModal'
 
 const Home = () => {
+  const queryClient = useQueryClient()
   const [activeSearch, setActiveSearch] = useState('')
   const [selectedItem, setSelectedItem] = useState<Item | null>(null)
-  const [modalOpen, setModalOpen] = useState(false)
+  const [opportunitiesModalOpen, setOpportunitiesModalOpen] = useState(false)
+  const [snackbar, setSnackbar] = useState<{ open: boolean; message: string; severity: 'success' | 'error' }>({
+    open: false,
+    message: '',
+    severity: 'success',
+  })
 
-  // 🔹 React Query
   const {
-    data,
-    isLoading,
-    isError,
-    fetchNextPage,
-    hasNextPage,
-    isFetchingNextPage,
-    refetch,
+    data, isLoading, isError, fetchNextPage, hasNextPage, isFetchingNextPage, refetch,
   } = useInfiniteQuery<PaginatedResponse<Item>>({
     queryKey: ['items', activeSearch],
     initialPageParam: 1,
     queryFn: async ({ pageParam }) => {
-      const params: any = { page: pageParam }
-      if (activeSearch) params.search = activeSearch
-      
       const res = await api.get<PaginatedResponse<Item>>('api/catalog/items/', {
-        params,
+        params: { page: pageParam, ...(activeSearch && { search: activeSearch }) }
       })
       return res.data
     },
     getNextPageParam: (lastPage) => {
-      if (lastPage.next) {
-        const url = new URL(lastPage.next)
-        const nextPage = url.searchParams.get('page')
-        return nextPage ? Number(nextPage) : undefined
-      }
-      return undefined
+      if (!lastPage.next) return undefined
+      return Number(new URL(lastPage.next).searchParams.get('page')) || undefined
     },
   })
 
-  // 🔹 Handlers
-  const handleOpenItem = (item: Item) => {
-    setSelectedItem(item)
-    setModalOpen(true)
+  const { mutate: addToCart } = useMutation({
+    mutationFn: async (itemId: number | string) => {
+      await api.post('api/cart/add_item/', { item_id: itemId })
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['cart'] })
+      setSnackbar({ open: true, message: 'Item adicionado ao carrinho com sucesso', severity: 'success' })
+    },
+    onError: () => {
+      setSnackbar({ open: true, message: 'Erro ao adicionar item ao carrinho', severity: 'error' })
+    },
+  })
+
+  const handleCloseSnackbar = (_event?: React.SyntheticEvent | Event, reason?: string) => {
+    if (reason === 'clickaway') return
+    setSnackbar((prev) => ({ ...prev, open: false }))
   }
 
-  const handleCloseModal = () => {
-    setModalOpen(false)
-    setSelectedItem(null)
-  }
-
-  const handleSavedItem = () => {
-    refetch()
-  }
-
-  // 🔹 Dados achatados
   const allItems = data?.pages.flatMap((page) => page.results) || []
   const totalCount = data?.pages[0]?.count || 0
 
   return (
     <PageWrapper>
       <Content>
-        {/* 1. Busca */}
-        <HomeSearch onSearch={setActiveSearch} />
+        <PageHeader 
+          title="Catálogo" 
+          subtitle="Visão Geral do Estoque" 
+          icon={HomeIcon}
+          color="primary"
+        />
 
-        {/* 2. Loading Inicial ou Erro */}
+        <Search 
+          onSearch={setActiveSearch} 
+          action={
+            <Button 
+              variant="contained" 
+              color="error"
+              startIcon={<MoneyOffIcon />}
+              onClick={() => setOpportunitiesModalOpen(true)}
+            >
+              Vendas Perdidas
+            </Button>
+          }
+        />
+
         {isLoading ? (
-          <Box sx={{ display: 'flex', justifyContent: 'center', mt: 4 }}>
-            <CircularProgress />
-          </Box>
+          <Box sx={{ display: 'flex', justifyContent: 'center', mt: 4 }}><CircularProgress /></Box>
         ) : isError ? (
-          <Typography color="error" align="center">
-            Erro ao carregar itens.
-          </Typography>
+          <Typography color="error" align="center">Erro ao carregar itens.</Typography>
         ) : (
           <>
-            {/* 3. Contador */}
-            <Box sx={{ mb: 2, fontWeight: 600 }}>
-              Itens encontrados: {totalCount}
+            <Box sx={{ mb: 2, fontWeight: 600, color: 'text.secondary' }}>
+              itens encontrados: {totalCount}
             </Box>
 
-            {/* 4. Lista */}
             {allItems.map((item) => (
-              <HomeItemRow 
+              <ItemRow 
                 key={item.id} 
                 item={item} 
-                onOpenDetails={handleOpenItem} 
+                showPrice={true}
+                onOpenDetails={setSelectedItem}
+                actions={
+                  <IconButton 
+                    color="primary" 
+                    onClick={(e) => {
+                      e.stopPropagation()
+                      addToCart(item.id)
+                    }}
+                  >
+                    <AddShoppingCartIcon />
+                  </IconButton>
+                }
               />
             ))}
 
-            {/* 5. Scroll Infinito */}
             <ScrollSentinel 
               isFetchingNextPage={isFetchingNextPage}
               hasNextPage={hasNextPage}
@@ -109,13 +127,29 @@ const Home = () => {
           </>
         )}
 
-        {/* 6. Modal */}
         <ItemDetailsModal
-          open={modalOpen}
+          open={!!selectedItem}
           item={selectedItem}
-          onClose={handleCloseModal}
-          onSaved={handleSavedItem}
+          onClose={() => setSelectedItem(null)}
+          onSaved={() => refetch()}
         />
+
+        <OpportunitiesModal
+          open={opportunitiesModalOpen}
+          onClose={() => setOpportunitiesModalOpen(false)}
+          initialProductName={activeSearch}
+        />
+
+        <Snackbar
+          open={snackbar.open}
+          autoHideDuration={3000}
+          onClose={handleCloseSnackbar}
+          anchorOrigin={{ vertical: 'top', horizontal: 'center' }}
+        >
+          <Alert onClose={handleCloseSnackbar} severity={snackbar.severity} variant="filled" sx={{ width: '100%' }}>
+            {snackbar.message}
+          </Alert>
+        </Snackbar>
       </Content>
     </PageWrapper>
   )

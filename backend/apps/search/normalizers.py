@@ -1,17 +1,12 @@
-# apps/search/normalizers.py
 from __future__ import annotations
+import unicodedata
 
 
 def normalize_query_to_tags(query: str) -> list[str]:
-    """
-    Converte a string digitada pelo usuário em uma lista de "tags" (tokens).
-    Regras definidas:
-    - Quebra por espaços
-    - Tudo vira tag (sem stopwords)
-    - Normaliza para lowercase
-    - Remove tokens vazios
-    """
     if not query:
         return []
 
-    return [token.strip().lower() for token in query.split(" ") if token.strip()]
+    normalized_query = unicodedata.normalize("NFKD", query)
+    unaccented_query = "".join(c for c in normalized_query if not unicodedata.combining(c))
+
+    return [token.strip().lower() for token in unaccented_query.split(" ") if token.strip()]

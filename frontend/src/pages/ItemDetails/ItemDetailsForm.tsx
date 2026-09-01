@@ -1,14 +1,19 @@
-import { Box, Tabs, Tab, Typography, Chip, Stack, Alert } from '@mui/material'
+import { Box, Tabs, Tab, Typography, Chip, Stack, Alert, Paper, Divider, List, ListItem, ListItemText, IconButton } from '@mui/material'
 import AddCircleOutlineIcon from '@mui/icons-material/AddCircleOutline'
 
 import Description from './fields/Description'
 import Conversions from './fields/Conversions'
 import Tags from './fields/Tags'
 import Applications from './fields/Applications'
+import ImagesCarousel from '@/components/ImagesCarousel'
 
 import { formContainerSx } from './ItemDetailsForm.styles'
 
-// Interface duplicada localmente para evitar dependência circular
+interface ItemImage {
+  id: number
+  image: string
+}
+
 interface GlobalSuggestions {
   normalized_description: string | null
   conversions: string[]
@@ -25,12 +30,17 @@ interface ItemFormState {
 
 interface ItemDetailsFormProps {
   form: ItemFormState
-  globalSuggestions: GlobalSuggestions | null
+  existingImages: ItemImage[]
+  newImages: File[]
+  globalSuggestions?: GlobalSuggestions | null
   activeTab: number
   onTabChange: (newValue: number) => void
   onChange: <K extends keyof ItemFormState>(
     field: K
   ) => (value: ItemFormState[K]) => void
+  onAddImages: (files: File[]) => void
+  onRemoveNewImage: (index: number) => void
+  onRemoveExistingImage: (id: number) => void
   onAcceptSuggestion: (
     field: keyof Omit<ItemFormState, 'description'>,
     value: string
@@ -39,15 +49,27 @@ interface ItemDetailsFormProps {
 
 const ItemDetailsForm = ({
   form,
+  existingImages,
+  newImages,
   globalSuggestions,
   activeTab,
   onTabChange,
   onChange,
+  onAddImages,
+  onRemoveNewImage,
+  onRemoveExistingImage,
   onAcceptSuggestion,
 }: ItemDetailsFormProps) => {
 
   const renderLocalTab = () => (
     <>
+      <ImagesCarousel 
+        existingImages={existingImages} 
+        newImages={newImages} 
+        onAddImages={onAddImages} 
+        onRemoveNewImage={onRemoveNewImage}
+        onRemoveExistingImage={onRemoveExistingImage}
+      />
       <Description
         value={form.description}
         onChange={onChange('description')}
@@ -76,7 +98,6 @@ const ItemDetailsForm = ({
       )
     }
 
-    // Filtra o que tem no Global mas NÃO tem no Local
     const missingConversions = globalSuggestions.conversions.filter(
       (c) => !form.conversions.includes(c)
     )
@@ -94,23 +115,21 @@ const ItemDetailsForm = ({
       (globalSuggestions.normalized_description && globalSuggestions.normalized_description !== form.description)
 
     return (
-      <>
+      <Stack spacing={3} sx={{ pb: 2 }}>
         {!hasSuggestions && (
-          <Alert severity="success" sx={{ mb: 3 }}>
+          <Alert severity="success">
              Seu item já está atualizado com todas as definições da comunidade!
           </Alert>
         )}
 
-        <Box sx={{ mb: 3 }}>
+        <Paper variant="outlined" sx={{ p: 2, borderRadius: 2, bgcolor: 'background.default' }}>
           <Typography variant="subtitle2" color="text.secondary" gutterBottom>
-              Descrição Padronizada (Referência)
+             Descrição Padronizada (Referência)
           </Typography>
-          <Box sx={{ p: 2, bgcolor: 'action.hover', borderRadius: 1 }}>
-              <Typography color="text.primary">
-                  {globalSuggestions.normalized_description || "Sem descrição padronizada disponível."}
-              </Typography>
-          </Box>
-        </Box>
+          <Typography color="text.primary" fontWeight="medium">
+             {globalSuggestions.normalized_description || "Sem descrição padronizada disponível."}
+          </Typography>
+        </Paper>
 
         <SuggestionsSection 
           title="Conversões Sugeridas" 
@@ -128,8 +147,9 @@ const ItemDetailsForm = ({
           title="Aplicações Sugeridas" 
           items={missingApps} 
           onAdd={(val) => onAcceptSuggestion('applications', val)} 
+          variant="list"
         />
-      </>
+      </Stack>
     )
   }
 
@@ -153,33 +173,64 @@ const ItemDetailsForm = ({
 const SuggestionsSection = ({ 
     title, 
     items, 
-    onAdd 
+    onAdd,
+    variant = 'chips'
 }: { 
     title: string, 
     items: string[], 
-    onAdd: (val: string) => void 
+    onAdd: (val: string) => void,
+    variant?: 'chips' | 'list'
 }) => {
     if (items.length === 0) return null
 
     return (
-        <Box sx={{ mb: 3 }}>
-            <Typography variant="subtitle2" color="text.secondary" gutterBottom>
+        <Paper variant="outlined" sx={{ p: 2, borderRadius: 2 }}>
+            <Typography variant="subtitle1" fontWeight="600" color="text.primary" gutterBottom>
                 {title}
             </Typography>
-            <Stack direction="row" flexWrap="wrap" gap={1}>
-                {items.map((item) => (
-                    <Chip
-                        key={item}
-                        label={item}
-                        onClick={() => onAdd(item)}
-                        icon={<AddCircleOutlineIcon />}
-                        color="primary"
-                        variant="outlined"
-                        clickable
-                    />
-                ))}
-            </Stack>
-        </Box>
+            <Divider sx={{ mb: 2 }} />
+            
+            {variant === 'chips' ? (
+                <Stack direction="row" flexWrap="wrap" gap={1}>
+                    {items.map((item) => (
+                        <Chip
+                            key={item}
+                            label={item}
+                            onClick={() => onAdd(item)}
+                            icon={<AddCircleOutlineIcon />}
+                            color="primary"
+                            variant="outlined"
+                            clickable
+                            sx={{ bgcolor: 'primary.50' }}
+                        />
+                    ))}
+                </Stack>
+            ) : (
+                <List disablePadding>
+                    {items.map((item, index) => (
+                        <ListItem
+                            key={item}
+                            disablePadding
+                            secondaryAction={
+                                <IconButton edge="end" color="primary" onClick={() => onAdd(item)}>
+                                    <AddCircleOutlineIcon />
+                                </IconButton>
+                            }
+                            sx={{
+                                borderBottom: index < items.length - 1 ? '1px solid' : 'none',
+                                borderColor: 'divider',
+                                py: 1
+                            }}
+                        >
+                            <ListItemText 
+                                primary={item} 
+                                primaryTypographyProps={{ variant: 'body2', color: 'text.secondary' }}
+                            />
+                        </ListItem>
+                    ))}
+                </List>
+            )}
+        </Paper>
     )
 }
 

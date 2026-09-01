@@ -7,6 +7,17 @@ import Navbar from '@/components/Navbar'
 import ProtectedRoute from '@/components/ProtectedRoutes'
 import PasswordResetRequest from '@/pages/auth/PasswordResetRequest'
 import PasswordReset from '@/pages/auth/PasswordReset'
+import Purchases from '@/pages/Purchases'
+import PurchaseList from '@/pages/Purchases/PurchaseList'
+import AddItem from '@/pages/AddItem'
+import ArchivedItems from '@/pages/ArchivedItems'
+import EditPrices from '@/pages/Purchases/EditPrices'
+import Transactions from '@/pages/Transactions'
+import TransactionDetails from '@/pages/Transactions/details'
+import Opportunities from '@/pages/Opportunities'
+import { ContactList } from '@/pages/CRM/ContactList'
+import { AddContact } from '@/pages/CRM/AddContact'
+import Dashboard from '@/pages/Dashboards'
 
 function App() {
   const location = useLocation()
@@ -42,6 +53,18 @@ function App() {
             <Routes>
               <Route element={<ProtectedRoute />}>
                 <Route path="/home" element={<Home />} />
+                <Route path="/transactions" element={<Transactions />} />
+                <Route path="/transactions/:id" element={<TransactionDetails />} />
+                <Route path="/purchases" element={<Purchases />} />
+                <Route path="/purchases/list" element={<PurchaseList />} />
+                <Route path="/purchases/add" element={<AddItem />} />
+                <Route path="/purchases/:id/prices" element={<EditPrices />} />
+                <Route path="/archived" element={<ArchivedItems />} />
+                <Route path="/opportunities" element={<Opportunities />} />
+                <Route path="/crm" element={<ContactList />} />
+                <Route path="/crm/client/add" element={<AddContact type="client" />} />
+                <Route path="/crm/supplier/add" element={<AddContact type="supplier" />} />
+                <Route path="/dashboard" element={<Dashboard />} />
               </Route>
             </Routes>
           }

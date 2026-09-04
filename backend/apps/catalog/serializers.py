@@ -76,9 +76,15 @@ class ItemSerializer(serializers.ModelSerializer):
             ])
         
         if tags is not None:
+            processed_tags = set()
+            for v in tags:
+                for token in str(v).split():
+                    if norm_name := normalize_name(token):
+                        processed_tags.add(norm_name)
+                        
             instance.tags.set([
-                Tag.objects.get_or_create(name=norm_name)[0] 
-                for v in tags if (norm_name := normalize_name(v))
+                Tag.objects.get_or_create(name=tag)[0] 
+                for tag in processed_tags
             ])
             
         if applications is not None:

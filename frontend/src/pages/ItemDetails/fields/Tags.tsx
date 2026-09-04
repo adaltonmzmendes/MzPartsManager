@@ -15,7 +15,13 @@ const Tags = ({
       freeSolo
       options={[]}
       value={value}
-      onChange={(_, newValue) => onChange(newValue)}
+      onChange={(_, newValue) => {
+        const splitValues = newValue
+          .flatMap((v) => v.toLowerCase().split(/\s+/))
+          .filter(Boolean)
+          
+        onChange(Array.from(new Set(splitValues)))
+      }}
       renderInput={(params) => (
         <TextField
           {...params}

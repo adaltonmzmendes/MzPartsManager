@@ -1,9 +1,14 @@
 import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { Box, Button, TextField, Typography, Paper, Autocomplete, Stack } from '@mui/material'
+import { Box, Button, Typography, Paper, Stack } from '@mui/material'
 import { useMutation, useQueryClient } from '@tanstack/react-query'
 import api from '@/services/api'
 import ImagesCarousel from '@/components/ImagesCarousel'
+
+import Description from '../ItemDetails/fields/Description'
+import Conversions from '../ItemDetails/fields/Conversions'
+import Tags from '../ItemDetails/fields/Tags'
+import Applications from '../ItemDetails/fields/Applications'
 
 interface AddItemPayload {
   description: string
@@ -67,13 +72,11 @@ const AddItem = () => {
 
         <form onSubmit={handleSubmit}>
           <Stack spacing={3} sx={{ mt: 3 }}>
-            <TextField
-              label="Descrição do Item"
-              required
-              fullWidth
+            
+            <Description 
               value={description}
-              onChange={(e) => {
-                setDescription(e.target.value)
+              onChange={(val) => {
+                setDescription(val)
                 setErrorMsg('')
               }}
               disabled={mutation.isPending}
@@ -81,40 +84,22 @@ const AddItem = () => {
               helperText={errorMsg}
             />
 
-            <Autocomplete
-              multiple
-              freeSolo
-              options={[]}
+            <Conversions 
               value={conversions}
-              onChange={(_, newValue) => setConversions(newValue as string[])}
+              onChange={setConversions}
               disabled={mutation.isPending}
-              renderInput={(params) => (
-                <TextField {...params} label="Conversões (Pressione Enter para adicionar)" />
-              )}
             />
 
-            <Autocomplete
-              multiple
-              freeSolo
-              options={[]}
+            <Tags 
               value={tags}
-              onChange={(_, newValue) => setTags(newValue as string[])}
+              onChange={setTags}
               disabled={mutation.isPending}
-              renderInput={(params) => (
-                <TextField {...params} label="Tags (Pressione Enter para adicionar)" />
-              )}
             />
 
-            <Autocomplete
-              multiple
-              freeSolo
-              options={[]}
-              value={applications}
-              onChange={(_, newValue) => setApplications(newValue as string[])}
+            <Applications 
+              applications={applications}
+              onChange={setApplications}
               disabled={mutation.isPending}
-              renderInput={(params) => (
-                <TextField {...params} label="Aplicações (Pressione Enter para adicionar)" />
-              )}
             />
 
             <ImagesCarousel 

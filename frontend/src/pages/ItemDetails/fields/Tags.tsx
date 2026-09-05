@@ -3,11 +3,13 @@ import { Autocomplete, TextField } from '@mui/material'
 interface TagsProps {
   value: string[]
   onChange: (value: string[]) => void
+  disabled?: boolean
 }
 
 const Tags = ({
   value,
   onChange,
+  disabled,
 }: TagsProps) => {
   return (
     <Autocomplete
@@ -15,6 +17,7 @@ const Tags = ({
       freeSolo
       options={[]}
       value={value}
+      disabled={disabled}
       onChange={(_, newValue) => {
         const splitValues = newValue
           .flatMap((v) => v.toLowerCase().split(/\s+/))

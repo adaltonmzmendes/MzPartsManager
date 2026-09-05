@@ -33,6 +33,7 @@ import { CSS } from '@dnd-kit/utilities'
 interface ApplicationsProps {
   applications: string[]
   onChange: (value: string[]) => void
+  disabled?: boolean
 }
 
 interface SortableItemProps {
@@ -41,6 +42,7 @@ interface SortableItemProps {
   index: number
   isEditing: boolean
   editingValue: string
+  disabled?: boolean
   onEditChange: (value: string) => void
   onSave: () => void
   onCancel: () => void
@@ -54,6 +56,7 @@ const SortableItem = ({
   index,
   isEditing,
   editingValue,
+  disabled,
   onEditChange,
   onSave,
   onCancel,
@@ -74,14 +77,15 @@ const SortableItem = ({
       variant="outlined"
       sx={{ p: 2, display: 'flex', gap: 2, alignItems: isEditing ? 'flex-start' : 'center' }}
     >
-      {/* O handle de drag é isolado neste Box para não interferir nos inputs e botões */}
-      <Box
-        {...attributes}
-        {...listeners}
-        sx={{ cursor: 'grab', display: 'flex', alignItems: 'center', mt: isEditing ? 1 : 0 }}
-      >
-        <DragIndicatorIcon color="action" />
-      </Box>
+      {!disabled && (
+        <Box
+          {...attributes}
+          {...listeners}
+          sx={{ cursor: 'grab', display: 'flex', alignItems: 'center', mt: isEditing ? 1 : 0 }}
+        >
+          <DragIndicatorIcon color="action" />
+        </Box>
+      )}
 
       <Box sx={{ flex: 1 }}>
         {isEditing ? (
@@ -91,38 +95,41 @@ const SortableItem = ({
             value={editingValue}
             onChange={(e) => onEditChange(e.target.value)}
             fullWidth
+            disabled={disabled}
           />
         ) : (
           <Typography sx={{ whiteSpace: 'pre-wrap' }}>{app}</Typography>
         )}
       </Box>
 
-      <Box sx={{ display: 'flex', gap: 1, mt: isEditing ? 1 : 0 }}>
-        {isEditing ? (
-          <>
-            <IconButton size="small" onClick={onSave}>
-              <CheckIcon fontSize="small" />
-            </IconButton>
-            <IconButton size="small" onClick={onCancel}>
-              <CloseIcon fontSize="small" />
-            </IconButton>
-          </>
-        ) : (
-          <>
-            <IconButton size="small" onClick={() => onStartEdit(index)}>
-              <EditIcon fontSize="small" />
-            </IconButton>
-            <IconButton size="small" onClick={() => onRemove(index)}>
-              <DeleteIcon fontSize="small" />
-            </IconButton>
-          </>
-        )}
-      </Box>
+      {!disabled && (
+        <Box sx={{ display: 'flex', gap: 1, mt: isEditing ? 1 : 0 }}>
+          {isEditing ? (
+            <>
+              <IconButton size="small" onClick={onSave}>
+                <CheckIcon fontSize="small" />
+              </IconButton>
+              <IconButton size="small" onClick={onCancel}>
+                <CloseIcon fontSize="small" />
+              </IconButton>
+            </>
+          ) : (
+            <>
+              <IconButton size="small" onClick={() => onStartEdit(index)}>
+                <EditIcon fontSize="small" />
+              </IconButton>
+              <IconButton size="small" onClick={() => onRemove(index)}>
+                <DeleteIcon fontSize="small" />
+              </IconButton>
+            </>
+          )}
+        </Box>
+      )}
     </Paper>
   )
 }
 
-const Applications = ({ applications, onChange }: ApplicationsProps) => {
+const Applications = ({ applications, onChange, disabled }: ApplicationsProps) => {
   const [input, setInput] = useState('')
   const [editingIndex, setEditingIndex] = useState<number | null>(null)
   const [editingValue, setEditingValue] = useState('')
@@ -134,7 +141,6 @@ const Applications = ({ applications, onChange }: ApplicationsProps) => {
 
   const addApplication = () => {
     const value = input.trim()
-    // Evita duplicatas para garantir que as strings funcionem como IDs únicos no dnd-kit
     if (!value || applications.includes(value)) return
     onChange([...applications, value])
     setInput('')
@@ -181,6 +187,7 @@ const Applications = ({ applications, onChange }: ApplicationsProps) => {
         minRows={2}
         value={input}
         onChange={(e) => setInput(e.target.value)}
+        disabled={disabled}
         onKeyDown={(e) => {
           if (e.key === 'Enter' && e.ctrlKey) {
             e.preventDefault()
@@ -190,7 +197,7 @@ const Applications = ({ applications, onChange }: ApplicationsProps) => {
         helperText="Ctrl + Enter para adicionar"
       />
 
-      <Button variant="outlined" onClick={addApplication} disabled={!input.trim()}>
+      <Button variant="outlined" onClick={addApplication} disabled={!input.trim() || disabled}>
         Adicionar aplicação
       </Button>
 
@@ -204,6 +211,7 @@ const Applications = ({ applications, onChange }: ApplicationsProps) => {
               index={index}
               isEditing={editingIndex === index}
               editingValue={editingValue}
+              disabled={disabled}
               onEditChange={setEditingValue}
               onSave={saveEdit}
               onCancel={cancelEdit}
